@@ -1,0 +1,100 @@
+version: '3.8'
+
+services:
+  cta:
+    build:
+      context: ..
+      dockerfile: containerized_experiment/Dockerfile
+    container_name: hvrt-cta
+    environment:
+      - CTA_PORT=8000
+    ports:
+      - "8000:8000"
+    networks:
+      - hvrt-network
+    volumes:
+      - ./logs:/app/logs
+    command: python cta_server.py
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ec:
+    build:
+      context: ..
+      dockerfile: containerized_experiment/Dockerfile
+    container_name: hvrt-ec
+    environment:
+      - EC_PORT=8050
+      - CTA_URL=http://cta:8000
+    ports:
+      - "8050:8050"
+    networks:
+      - hvrt-network
+    volumes:
+      - ./logs:/app/logs
+    command: python ec_server.py
+    depends_on:
+      cta:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8050/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ag1:
+    build:
+      context: ..
+      dockerfile: containerized_experiment/Dockerfile
+    container_name: hvrt-ag1
+    environment:
+      - AG_PORT=8100
+      - AG_ID=ag1
+      - EC_URL=http://ec:8050
+    ports:
+      - "8100:8100"
+    networks:
+      - hvrt-network
+    volumes:
+      - ./logs:/app/logs
+    command: python ag_server.py
+    depends_on:
+      ec:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8100/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ag2:
+    build:
+      context: ..
+      dockerfile: containerized_experiment/Dockerfile
+    container_name: hvrt-ag2
+    environment:
+      - AG_PORT=8200
+      - AG_ID=ag2
+      - EC_URL=http://ec:8050
+    ports:
+      - "8200:8200"
+    networks:
+      - hvrt-network
+    volumes:
+      - ./logs:/app/logs
+    command: python ag_server.py
+    depends_on:
+      ec:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8200/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  hvrt-network:
+    driver: bridge

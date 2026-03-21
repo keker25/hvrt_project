@@ -1,0 +1,12 @@
+{"stage": "stage1_pre_revocation", "device_id": "td_1773991476_005", "result": "allow", "reason": "hvrt_verified"}
+{"stage": "stage1_pre_revocation", "device_id": "td_1773991467_002", "result": "allow", "reason": "hvrt_verified"}
+{"stage": "stage1_pre_revocation", "device_id": "td_1773991529_026", "result": "allow", "reason": "hvrt_verified"}
+{"stage": "stage2_cta_revoked_not_synced", "device_id": "td_1773991476_005", "result": "allow", "reason": "hvrt_verified"}
+{"stage": "stage2_cta_revoked_not_synced", "device_id": "td_1773991467_002", "result": "allow", "reason": "hvrt_verified"}
+{"stage": "stage2_cta_revoked_not_synced", "device_id": "td_1773991529_026", "result": "allow", "reason": "hvrt_verified"}
+{"stage": "stage3_ec_synced_ag_not_synced", "device_id": "td_1773991476_005", "result": "deny", "reason": "device is revoked (AG refused to issue RRT)"}
+{"stage": "stage3_ec_synced_ag_not_synced", "device_id": "td_1773991467_002", "result": "deny", "reason": "device is revoked (AG refused to issue RRT)"}
+{"stage": "stage3_ec_synced_ag_not_synced", "device_id": "td_1773991529_026", "result": "deny", "reason": "device is revoked (AG refused to issue RRT)"}
+{"stage": "stage4_all_synced", "device_id": "td_1773991476_005", "result": "deny", "reason": "device is revoked (AG refused to issue RRT)"}
+{"stage": "stage4_all_synced", "device_id": "td_1773991467_002", "result": "deny", "reason": "device is revoked (AG refused to issue RRT)"}
+{"stage": "stage4_all_synced", "device_id": "td_1773991529_026", "result": "deny", "reason": "device is revoked (AG refused to issue RRT)"}

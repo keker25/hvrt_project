@@ -1,0 +1,11 @@
+device:
+  id: td001
+
+cta:
+  url: http://127.0.0.1:8000
+
+ag:
+  default_url: http://127.0.0.1:8100
+
+database:
+  data_dir: td_client/data

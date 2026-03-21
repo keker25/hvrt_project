@@ -1,0 +1,23 @@
+{
+  "td_oneclick": {
+    "device_id": "td_oneclick",
+    "device_secret": "Pq6kC808Qg3eKFScfQV_NNvxpi4OMxoQWwX7uwvq70A",
+    "status": "active",
+    "region_id": "regionA",
+    "created_at": "2026-03-16T02:02:46.215382Z"
+  },
+  "test_device": {
+    "device_id": "test_device",
+    "device_secret": "BD0p6voNFazDPSPWCA-PAJ9zVMA9HijDbP8-BcJGDio",
+    "status": "active",
+    "region_id": "regionA",
+    "created_at": "2026-03-16T03:23:24.192740Z"
+  },
+  "td_real": {
+    "device_id": "td_real",
+    "device_secret": "BS6vqyWQ7ERLCqU4XB56wAZ6DMopR5oJNHikmtLL5rI",
+    "status": "revoked",
+    "region_id": "regionA",
+    "created_at": "2026-03-16T10:38:15.306024Z"
+  }
+}

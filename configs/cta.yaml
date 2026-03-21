@@ -1,0 +1,11 @@
+service:
+  name: cta
+  port: 8000
+  host: 0.0.0.0
+
+gtt:
+  valid_days: 30
+  policy_version: 1
+
+database:
+  data_dir: cta/data

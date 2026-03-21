@@ -1,0 +1,15 @@
+service:
+  name: ec
+  port: 8050
+  host: 0.0.0.0
+
+region:
+  id: regionA
+
+sync:
+  enabled: true
+  interval_seconds: 5
+  cta_url: http://127.0.0.1:8000
+
+database:
+  data_dir: ec/data

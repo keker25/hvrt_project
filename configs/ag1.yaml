@@ -1,0 +1,13 @@
+service:
+  name: ag1
+  port: 8100
+  host: 0.0.0.0
+
+region:
+  id: regionA
+
+sync:
+  ec_url: http://127.0.0.1:8050
+
+database:
+  data_dir: ag/data

@@ -1,0 +1,14 @@
+{
+  "revocation_version": 2,
+  "ag_privkey": "LTtpiCnXMv0STmpJgN11h2vu00NH4Yq0hMidhsuD0Pw=",
+  "ag_pubkey": "18aDl6IuOSlMmskdiQDmwmFsg5toxCw9+n/zcy3komU=",
+  "current_gtt": {
+    "gtt_id": "gtt_a34bb77629387045",
+    "root_pubkey": "hrsxlEOga0g5i16x3wQItUowLwpTZwDjbvTn8Q9zQXM=",
+    "policy_version": 1,
+    "revocation_version": 1,
+    "valid_from": "2026-03-15T13:18:39.293874Z",
+    "valid_to": "2026-04-14T13:18:39.293874Z",
+    "signature": "JBBJgA2CiUoOmrR+MsvJCgpbrWn7mJqH/9EP2c6hLiy0/YgY7RW8JAYA6R1RB7f9si/Veg1uf6GV0LKxq2SJAg=="
+  }
+}

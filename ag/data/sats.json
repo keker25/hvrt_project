@@ -1,0 +1,20 @@
+{
+  "sat_7586e1e85c9235f0": {
+    "sat_id": "sat_7586e1e85c9235f0",
+    "device_id": "td_real",
+    "rrt_id": "rrt_d4232215c714ec80",
+    "issue_time": "2026-03-16T10:38:18.424116Z",
+    "expire_time": "2026-03-16T11:08:18.424116Z",
+    "auth_scope": "local_access",
+    "signature": "ssw8YX2nJub+s8j86K62tNW/EYzgO2g2b/GyP/j33oNlp18HzahL/8Ve9zbS79Orl1d3QD2ai02My2lv6W8BAw=="
+  },
+  "sat_6ab69b081e54d024": {
+    "sat_id": "sat_6ab69b081e54d024",
+    "device_id": "td_real",
+    "rrt_id": "rrt_43f417adb580fca5",
+    "issue_time": "2026-03-16T10:38:27.568322Z",
+    "expire_time": "2026-03-16T11:08:27.568322Z",
+    "auth_scope": "local_access",
+    "signature": "KSa/ZbQ654YU0ZwngYZYCyBEi3jW8nTccU8H8eqdtul4VEt4I8JNDQdHkGZkXUE5tH+B+Eg2YcoovPCvAmVSDg=="
+  }
+}

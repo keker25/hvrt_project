@@ -1,0 +1,52 @@
+{
+  "chl_27a2f4f55fbb8184": {
+    "request_id": "req_ace02021dba98c56",
+    "device_id": "td_real",
+    "nonce": "sKnrVVJxu5g9Iyn4rUQB1RzhChjlEyoOcQ6+EeA3m+g=",
+    "sat": {
+      "sat_id": "sat_7586e1e85c9235f0",
+      "device_id": "td_real",
+      "rrt_id": "rrt_d4232215c714ec80",
+      "issue_time": "2026-03-16T10:38:18.424116Z",
+      "expire_time": "2026-03-16T11:08:18.424116Z",
+      "auth_scope": "local_access",
+      "signature": "ssw8YX2nJub+s8j86K62tNW/EYzgO2g2b/GyP/j33oNlp18HzahL/8Ve9zbS79Orl1d3QD2ai02My2lv6W8BAw=="
+    },
+    "rrt": {
+      "rrt_id": "rrt_d4232215c714ec80",
+      "device_id": "td_real",
+      "region_id": "regionA",
+      "gtt_id": "gtt_a34bb77629387045",
+      "issue_time": "2026-03-16T10:38:18.351471Z",
+      "expire_time": "2026-03-17T10:38:18.351471Z",
+      "policy_tag": "default",
+      "signature": "jDqJZ6w/hAZuKI5lBSy914Dex4dmWmDDKJlkLW5EC8bhcYxFNb2Xu/zEnm8ffWBaK42ZTT5HAl9xy8srIp5JDg=="
+    },
+    "timestamp": "2026-03-16T10:38:18.433482Z"
+  },
+  "chl_f559ad5424fb529e": {
+    "request_id": "req2_1651cf6e027275f8",
+    "device_id": "td_real",
+    "nonce": "IDyD2BCuXy+kG9GJPpjdpcry4jb7gpSg2XwdFM4Ck3Q=",
+    "sat": {
+      "sat_id": "sat_6ab69b081e54d024",
+      "device_id": "td_real",
+      "rrt_id": "rrt_43f417adb580fca5",
+      "issue_time": "2026-03-16T10:38:27.568322Z",
+      "expire_time": "2026-03-16T11:08:27.568322Z",
+      "auth_scope": "local_access",
+      "signature": "KSa/ZbQ654YU0ZwngYZYCyBEi3jW8nTccU8H8eqdtul4VEt4I8JNDQdHkGZkXUE5tH+B+Eg2YcoovPCvAmVSDg=="
+    },
+    "rrt": {
+      "rrt_id": "rrt_43f417adb580fca5",
+      "device_id": "td_real",
+      "region_id": "regionA",
+      "gtt_id": "gtt_a34bb77629387045",
+      "issue_time": "2026-03-16T10:38:27.556826Z",
+      "expire_time": "2026-03-17T10:38:27.556826Z",
+      "policy_tag": "default",
+      "signature": "jk0yve9ntl8Lu69/+lfQXhkSnPiWiwm3WrfFd3H9q+ajqKJ3T/5UTN0LbLgf0cze0UpvrntRuHEBM2WiMhfBCg=="
+    },
+    "timestamp": "2026-03-16T10:38:27.577857Z"
+  }
+}

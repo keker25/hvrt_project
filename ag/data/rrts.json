@@ -1,0 +1,22 @@
+{
+  "rrt_d4232215c714ec80": {
+    "rrt_id": "rrt_d4232215c714ec80",
+    "device_id": "td_real",
+    "region_id": "regionA",
+    "gtt_id": "gtt_a34bb77629387045",
+    "issue_time": "2026-03-16T10:38:18.351471Z",
+    "expire_time": "2026-03-17T10:38:18.351471Z",
+    "policy_tag": "default",
+    "signature": "jDqJZ6w/hAZuKI5lBSy914Dex4dmWmDDKJlkLW5EC8bhcYxFNb2Xu/zEnm8ffWBaK42ZTT5HAl9xy8srIp5JDg=="
+  },
+  "rrt_43f417adb580fca5": {
+    "rrt_id": "rrt_43f417adb580fca5",
+    "device_id": "td_real",
+    "region_id": "regionA",
+    "gtt_id": "gtt_a34bb77629387045",
+    "issue_time": "2026-03-16T10:38:27.556826Z",
+    "expire_time": "2026-03-17T10:38:27.556826Z",
+    "policy_tag": "default",
+    "signature": "jk0yve9ntl8Lu69/+lfQXhkSnPiWiwm3WrfFd3H9q+ajqKJ3T/5UTN0LbLgf0cze0UpvrntRuHEBM2WiMhfBCg=="
+  }
+}
