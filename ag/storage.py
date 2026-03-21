@@ -13,6 +13,8 @@ class AGStorage:
             self.db.set("meta", "revocation_version", 0)
         if not self.db.load("device_states"):
             self.db.save("device_states", {})
+        if not self.db.load("device_secrets"):
+            self.db.save("device_secrets", {})
         if not self.db.load("rrts"):
             self.db.save("rrts", {})
         if not self.db.load("sats"):
@@ -87,3 +89,12 @@ class AGStorage:
     
     def get_ag_pubkey(self) -> str:
         return self.db.get("meta", "ag_pubkey")
+    
+    def save_device_secret(self, device_id: str, device_secret: str):
+        device_secrets = self.db.load("device_secrets")
+        device_secrets[device_id] = device_secret
+        self.db.save("device_secrets", device_secrets)
+    
+    def get_device_secret(self, device_id: str) -> str:
+        device_secrets = self.db.load("device_secrets")
+        return device_secrets.get(device_id)

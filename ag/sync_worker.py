@@ -27,14 +27,28 @@ class AGSyncWorker:
             self.storage.save_gtt(full_gtt)
             logger.debug(f"Updated GTT from EC: {full_gtt['gtt_id']}")
             
-            state_response = await client.get(f"{self.ec_url}/ec/state/current")
-            state_response.raise_for_status()
-            state_data = state_response.json()
+            delta_response = await client.get(
+                f"{self.ec_url}/ec/state/delta",
+                params={"from_version": current_version}
+            )
+            delta_response.raise_for_status()
+            delta_data = delta_response.json()
             
-            if state_data["revocation_version"] > current_version:
-                logger.info(f"Updating state to version {state_data['revocation_version']}")
-                self.storage.save_device_states(state_data["device_states"])
-                self.storage.set_revocation_version(state_data["revocation_version"])
+            if delta_data["to_version"] > current_version:
+                logger.info(f"Applying delta from {current_version} to {delta_data['to_version']}")
+                events = delta_data["changes"]
+                
+                if events:
+                    current_states = self.storage.get_device_states()
+                    new_states, _ = apply_delta(
+                        current_states,
+                        current_version,
+                        [type("RevocationEvent", (object,), e) for e in events]
+                    )
+                    self.storage.save_device_states(new_states)
+                
+                self.storage.set_revocation_version(delta_data["to_version"])
+                logger.info(f"Synced to version {delta_data['to_version']}")
     
     async def _run_loop(self):
         while self.running:

@@ -21,6 +21,8 @@ class RRT(BaseModel):
     issue_time: str
     expire_time: str
     policy_tag: str = "default"
+    status_version: int  # 添加：状态版本
+    access_scope: str = "regionwide"  # 添加：访问作用域
     signature: str
 
 
@@ -31,6 +33,8 @@ class SAT(BaseModel):
     issue_time: str
     expire_time: str
     auth_scope: str = "local_access"
+    gateway_scope: str = "current"  # 添加：网关作用域
+    nonce_seed: str  # 添加：随机数种子
     signature: str
 
 
