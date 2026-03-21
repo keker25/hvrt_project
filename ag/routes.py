@@ -76,7 +76,7 @@ service = AGService()
 @router.post("/issue_rrt")
 async def issue_rrt(request: IssueRRTRequest):
     try:
-        return service.issue_rrt(request.device_id, request.region_id)
+        return await service.issue_rrt(request.device_id, request.region_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 

@@ -31,6 +31,10 @@ class AGSyncWorker:
             for device_id, secret in state_data.get("device_secrets", {}).items():
                 self.storage.save_device_secret(device_id, secret)
             
+            if state_data.get("ec_pubkey"):
+                self.storage.set_ec_pubkey(state_data["ec_pubkey"])
+                logger.debug("Updated EC public key")
+            
             delta_response = await client.get(
                 f"{self.ec_url}/ec/state/delta",
                 params={"from_version": current_version}

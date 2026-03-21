@@ -86,6 +86,7 @@ class OnlineVerifyRequest(BaseModel):
     device_id: str
     sat: Dict[str, Any]
     rrt: Dict[str, Any]
+    ec_pubkey: str
     ag_pubkey: str
 
 

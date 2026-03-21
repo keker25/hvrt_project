@@ -218,7 +218,7 @@ class CTAService:
             "new_version": new_version
         }
 
-    def online_verify(self, device_id: str, sat: dict, rrt: dict, ag_pubkey: str):
+    def online_verify(self, device_id: str, sat: dict, rrt: dict, ec_pubkey: str, ag_pubkey: str):
         device = self.storage.get_device(device_id)
         if not device:
             return {"result": "deny", "reason": "device not found"}
@@ -244,7 +244,7 @@ class CTAService:
             **rrt,
             "model_dump": lambda self=None: dict(rrt),
         })()
-        if not verify_rrt(rrt_obj, ag_pubkey, gtt_data["gtt_id"]):
+        if not verify_rrt(rrt_obj, ec_pubkey, gtt_data["gtt_id"]):
             return {"result": "deny", "reason": "RRT verification failed"}
 
         sat_obj = type("SAT", (object,), {

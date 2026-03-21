@@ -35,7 +35,7 @@
 #         return self.db.load("device_states")
 
 
-from common import SimpleDB
+from common import SimpleDB, generate_ed25519_keypair
 from typing import Dict, List
 
 
@@ -55,6 +55,10 @@ class ECStorage:
             self.db.save("ag_whitelist", ["ag1", "ag2"])
         if not self.db.load("revocation_events"):
             self.db.save("revocation_events", [])
+        if not self.db.get("meta", "ec_privkey"):
+            privkey, pubkey = generate_ed25519_keypair()
+            self.db.set("meta", "ec_privkey", privkey)
+            self.db.set("meta", "ec_pubkey", pubkey)
 
     def save_gtt(self, gtt_data: Dict):
         self.db.set("meta", "current_gtt", gtt_data)
@@ -95,3 +99,9 @@ class ECStorage:
     def get_device_secret(self, device_id: str) -> str:
         device_secrets = self.db.load("device_secrets")
         return device_secrets.get(device_id)
+    
+    def get_ec_privkey(self) -> str:
+        return self.db.get("meta", "ec_privkey")
+    
+    def get_ec_pubkey(self) -> str:
+        return self.db.get("meta", "ec_pubkey")

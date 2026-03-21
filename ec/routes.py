@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 from .schemas import (
     StateCurrentResponse,
     StateDeltaResponse,
@@ -8,6 +9,11 @@ from .service import ECService
 
 router = APIRouter(prefix="/ec", tags=["ec"])
 service = ECService()
+
+
+class IssueRRTRequest(BaseModel):
+    device_id: str
+    region_id: str
 
 
 @router.get("/state/current")
@@ -26,3 +32,11 @@ async def get_gtt_current():
         return {"gtt": service.get_gtt_current()}
     except ValueError as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/rrt/issue")
+async def issue_rrt(request: IssueRRTRequest):
+    try:
+        return service.issue_rrt(request.device_id, request.region_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))

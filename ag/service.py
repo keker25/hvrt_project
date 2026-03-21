@@ -221,7 +221,13 @@ class AGService:
         worker = AGSyncWorker(self.storage)
         await worker.sync_with_ec()
 
-    def issue_rrt(self, device_id: str, region_id: str):
+    async def issue_rrt(self, device_id: str, region_id: str, ec_url: str = None):
+        import httpx
+        from common import Config
+        
+        if ec_url is None:
+            ec_url = Config.EC_URL
+        
         gtt = self.storage.get_gtt()
         if not gtt:
             raise ValueError("GTT not available")
@@ -232,17 +238,18 @@ class AGService:
         if device_states[device_id] != "active":
             raise ValueError(f"Device {device_id} is {device_states[device_id]}")
 
-        status_version = self.storage.get_revocation_version()
-        rrt = create_rrt(
-            self.storage.get_ag_privkey(),
-            device_id,
-            region_id,
-            gtt["gtt_id"],
-            status_version
-        )
-        self.storage.save_rrt(rrt.rrt_id, rrt.model_dump())
-        logger.info(f"Issued RRT for device {device_id}: {rrt.rrt_id}, status_version: {status_version}")
-        return {"rrt": rrt.model_dump()}
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.post(
+                f"{ec_url}/ec/rrt/issue",
+                json={"device_id": device_id, "region_id": region_id}
+            )
+            response.raise_for_status()
+            result = response.json()
+        
+        rrt_data = result["rrt"]
+        self.storage.save_rrt(rrt_data["rrt_id"], rrt_data)
+        logger.info(f"Issued RRT for device {device_id}: {rrt_data['rrt_id']}, status_version: {rrt_data['status_version']}")
+        return {"rrt": rrt_data}
 
     def issue_sat(self, device_id: str, rrt_id: str):
         rrt = self.storage.get_rrt(rrt_id)
@@ -302,6 +309,9 @@ class AGService:
             return {"result": "deny", "reason": "invalid HMAC"}
 
         if mode == "centralized":
+            ec_pubkey = self.storage.get_ec_pubkey()
+            if not ec_pubkey:
+                return {"result": "deny", "reason": "EC public key not available - please sync first"}
             async with httpx.AsyncClient() as client:
                 response = await client.post(
                     f"{Config.CTA_URL}/cta/auth/online_verify",
@@ -309,6 +319,7 @@ class AGService:
                         "device_id": device_id,
                         "sat": challenge["sat"],
                         "rrt": challenge["rrt"],
+                        "ec_pubkey": ec_pubkey,
                         "ag_pubkey": self.storage.get_ag_pubkey()
                     }
                 )
@@ -330,7 +341,10 @@ class AGService:
 
         rrt_data = challenge["rrt"]
         rrt_obj = type("RRT", (object,), {**rrt_data, "model_dump": lambda self=None: dict(rrt_data)})()
-        if not verify_rrt(rrt_obj, self.storage.get_ag_pubkey(), gtt["gtt_id"]):
+        ec_pubkey = self.storage.get_ec_pubkey()
+        if not ec_pubkey:
+            return {"result": "deny", "reason": "EC public key not available - please sync first"}
+        if not verify_rrt(rrt_obj, ec_pubkey, gtt["gtt_id"]):
             return {"result": "deny", "reason": "RRT verification failed"}
         
         local_revocation_version = self.storage.get_revocation_version()

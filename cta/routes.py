@@ -109,6 +109,7 @@ async def online_verify(request: OnlineVerifyRequest):
         request.device_id,
         request.sat,
         request.rrt,
+        request.ec_pubkey,
         request.ag_pubkey
     )
 

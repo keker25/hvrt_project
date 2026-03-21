@@ -98,3 +98,9 @@ class AGStorage:
     def get_device_secret(self, device_id: str) -> str:
         device_secrets = self.db.load("device_secrets")
         return device_secrets.get(device_id)
+    
+    def set_ec_pubkey(self, ec_pubkey: str):
+        self.db.set("meta", "ec_pubkey", ec_pubkey)
+    
+    def get_ec_pubkey(self) -> str:
+        return self.db.get("meta", "ec_pubkey")
