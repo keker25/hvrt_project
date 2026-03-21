@@ -54,10 +54,10 @@ python scripts/issue_device.py --device-id td001
 ### 4. 使用 TD 客户端
 
 ```bash
-# 初始化设备
-python -m td_client.main init --device-id td001
+# 注册设备到 CTA (必须 - 论文实验要求真实注册流程)
+python -m td_client.main register --device-id td001 --cta http://127.0.0.1:8000 --region regionA
 
-# 注册设备到 CTA (可选)
+# 向 AG 注册(enroll)获取票据
 python -m td_client.main enroll --device-id td001 --ag http://127.0.0.1:8100
 
 # 访问 AG
@@ -66,6 +66,8 @@ python -m td_client.main access --device-id td001 --ag http://127.0.0.1:8100
 # 漫游到另一个 AG
 python -m td_client.main roam --device-id td001 --ag http://127.0.0.1:8200
 ```
+
+注意: `init` 命令仅用于 DEMO 演示，论文实验必须使用 `register` 命令获取真实的 device_secret。
 
 ## 测试脚本
 

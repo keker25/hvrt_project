@@ -225,6 +225,12 @@ class AGService:
         gtt = self.storage.get_gtt()
         if not gtt:
             raise ValueError("GTT not available")
+        
+        device_states = self.storage.get_device_states()
+        if device_id not in device_states:
+            raise ValueError(f"Device {device_id} not registered")
+        if device_states[device_id] != "active":
+            raise ValueError(f"Device {device_id} is {device_states[device_id]}")
 
         status_version = self.storage.get_revocation_version()
         rrt = create_rrt(
@@ -291,7 +297,7 @@ class AGService:
         message = f"{challenge_id}:{challenge['nonce']}:{device_id}"
         device_secret = self.storage.get_device_secret(device_id)
         if not device_secret:
-            device_secret = f"secret_{device_id}"
+            return {"result": "deny", "reason": "device secret unavailable"}
         if not verify_hmac_sha256(device_secret, message, response_hmac):
             return {"result": "deny", "reason": "invalid HMAC"}
 
@@ -326,11 +332,21 @@ class AGService:
         rrt_obj = type("RRT", (object,), {**rrt_data, "model_dump": lambda self=None: dict(rrt_data)})()
         if not verify_rrt(rrt_obj, self.storage.get_ag_pubkey(), gtt["gtt_id"]):
             return {"result": "deny", "reason": "RRT verification failed"}
+        
+        local_revocation_version = self.storage.get_revocation_version()
+        if rrt_data.get("status_version", 0) < local_revocation_version:
+            return {"result": "deny", "reason": "RRT status version too old"}
+        
+        if rrt_data.get("access_scope") not in ["regionwide", self.region_id]:
+            return {"result": "deny", "reason": "RRT access scope not allowed"}
 
         sat_data = challenge["sat"]
         sat_obj = type("SAT", (object,), {**sat_data, "model_dump": lambda self=None: dict(sat_data)})()
         if not verify_sat(sat_obj, self.storage.get_ag_pubkey(), rrt_data["rrt_id"], device_id):
             return {"result": "deny", "reason": "SAT verification failed"}
+        
+        if sat_data.get("gateway_scope") not in ["current", "any"]:
+            return {"result": "deny", "reason": "SAT gateway scope not allowed"}
 
         if mode == "terminal_online_status":
             receipt = challenge.get("status_receipt")
@@ -346,9 +362,22 @@ class AGService:
                 return {"result": "deny", "reason": "status receipt verification failed"}
             if receipt_payload.get("status") != "active":
                 return {"result": "deny", "reason": f"device is {receipt_payload.get('status')}"}
+            
+            if receipt_payload.get("revocation_version", 0) < local_revocation_version:
+                return {"result": "deny", "reason": "status receipt revocation version too old"}
+            
+            from datetime import datetime, timezone
+            issued_at = receipt_payload.get("issued_at")
+            if issued_at:
+                issued_dt = datetime.fromisoformat(issued_at.replace("Z", "+00:00"))
+                now = datetime.now(timezone.utc)
+                if (now - issued_dt).total_seconds() > 300:
+                    return {"result": "deny", "reason": "status receipt expired"}
         else:
             device_states = self.storage.get_device_states()
-            if device_id in device_states and device_states[device_id] != "active":
+            if device_id not in device_states:
+                return {"result": "deny", "reason": "device not registered"}
+            if device_states[device_id] != "active":
                 return {"result": "deny", "reason": f"device is {device_states[device_id]}"}
 
         session_id = generate_id("sess")

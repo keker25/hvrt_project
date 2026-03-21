@@ -61,21 +61,35 @@ import time
 import json
 import sys
 import os
+import httpx
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from td_client.storage import TDStorage
 from td_client.client import TDClient
+from common import Config
 
 
-async def measure_latency(mode: str = "default", iterations: int = 20):
+async def measure_latency(mode: str = "default", iterations: int = 20, cta_url: str = None):
     print(f"=== Collecting Performance Metrics ({mode}) ===")
 
+    if cta_url is None:
+        cta_url = Config.CTA_URL
+    
     device_id = f"td_metrics_{mode}"
     storage = TDStorage()
 
     if not storage.load_device(device_id):
-        storage.save_device(device_id, f"secret_{device_id}")
+        print(f"Registering device {device_id} with CTA...")
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.post(
+                f"{cta_url}/cta/devices/register",
+                json={"device_id": device_id, "region_id": "regionA"}
+            )
+            response.raise_for_status()
+            result = response.json()
+            storage.save_device(device_id, result["device_secret"])
+            print(f"Device registered with real secret: {device_id}")
 
     client = TDClient(device_id, storage)
     ag_url = "http://127.0.0.1:8100"
@@ -107,5 +121,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Collect HVRT metrics")
     parser.add_argument("--mode", type=str, default="default", choices=["default", "centralized", "terminal_online_status"])
     parser.add_argument("--iterations", type=int, default=20)
+    parser.add_argument("--cta-url", type=str, default=None, help="CTA URL")
     args = parser.parse_args()
-    asyncio.run(measure_latency(args.mode, args.iterations))
+    asyncio.run(measure_latency(args.mode, args.iterations, args.cta_url))

@@ -19,13 +19,17 @@ class AGSyncWorker:
         async with httpx.AsyncClient(timeout=10.0) as client:
             gtt_response = await client.get(f"{self.ec_url}/ec/gtt/current")
             gtt_response.raise_for_status()
-            gtt_summary = gtt_response.json()
+            gtt_data = gtt_response.json()["gtt"]
+            self.storage.save_gtt(gtt_data)
+            logger.debug(f"Updated GTT from EC: {gtt_data['gtt_id']}")
             
-            full_gtt_response = await client.get(f"{Config.CTA_URL}/cta/gtt/current")
-            full_gtt_response.raise_for_status()
-            full_gtt = full_gtt_response.json()["gtt"]
-            self.storage.save_gtt(full_gtt)
-            logger.debug(f"Updated GTT from EC: {full_gtt['gtt_id']}")
+            state_response = await client.get(f"{self.ec_url}/ec/state/current")
+            state_response.raise_for_status()
+            state_data = state_response.json()
+            
+            self.storage.save_device_states(state_data["device_states"])
+            for device_id, secret in state_data.get("device_secrets", {}).items():
+                self.storage.save_device_secret(device_id, secret)
             
             delta_response = await client.get(
                 f"{self.ec_url}/ec/state/delta",
@@ -40,6 +44,15 @@ class AGSyncWorker:
                 
                 if events:
                     current_states = self.storage.get_device_states()
+                    for event in events:
+                        if event.get("type") == "device_register":
+                            current_states[event["device_id"]] = event["status"]
+                            if event.get("device_secret"):
+                                self.storage.save_device_secret(
+                                    event["device_id"], 
+                                    event["device_secret"]
+                                )
+                    
                     new_states, _ = apply_delta(
                         current_states,
                         current_version,

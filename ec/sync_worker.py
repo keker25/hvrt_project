@@ -108,7 +108,17 @@ class ECSyncWorker:
             if delta_data["to_version"] > current_version:
                 events = delta_data["changes"]
                 self.storage.add_revocation_events(events)
+                
                 current_states = self.storage.get_device_states()
+                for event in events:
+                    if event.get("type") == "device_register":
+                        current_states[event["device_id"]] = event["status"]
+                        if event.get("device_secret"):
+                            self.storage.save_device_secret(
+                                event["device_id"], 
+                                event["device_secret"]
+                            )
+                
                 new_states, _ = apply_delta(
                     current_states,
                     current_version,

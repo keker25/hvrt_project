@@ -113,7 +113,7 @@
 
 
 import secrets
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from common import (
     generate_ed25519_keypair,
     create_gtt,
@@ -164,7 +164,24 @@ class CTAService:
             created_at=datetime.utcnow().isoformat() + "Z"
         )
         self.storage.save_device(device)
-        logger.info(f"Registered device: {device_id} in region {region_id}")
+        
+        new_version = self.storage.get_revocation_version() + 1
+        self.storage.set_revocation_version(new_version)
+        
+        registration_event = {
+            "version": new_version,
+            "type": "device_register",
+            "device_id": device_id,
+            "status": "active",
+            "region_id": region_id,
+            "device_secret": device_secret,
+            "timestamp": datetime.utcnow().isoformat() + "Z"
+        }
+        self.storage.add_revocation_event(
+            type("RevocationEvent", (object,), registration_event)
+        )
+        
+        logger.info(f"Registered device: {device_id} in region {region_id}, version: {new_version}")
         return device
 
     def get_current_gtt(self):
@@ -248,11 +265,15 @@ class CTAService:
         if not device:
             raise ValueError(f"Device {device_id} not found")
 
+        now = datetime.now(timezone.utc)
+        expire_at = now + timedelta(minutes=5)
+        
         receipt_data = {
             "device_id": device_id,
             "status": device["status"],
             "revocation_version": self.storage.get_revocation_version(),
-            "issued_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+            "issued_at": now.isoformat().replace("+00:00", "Z"),
+            "expire_at": expire_at.isoformat().replace("+00:00", "Z")
         }
         signature = sign_with_ed25519(self.storage.get_root_privkey(), receipt_data)
         return {**receipt_data, "signature": signature}

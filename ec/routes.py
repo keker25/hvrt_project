@@ -21,8 +21,8 @@ async def get_state_delta(from_version: int):
 
 
 @router.get("/gtt/current")
-async def get_gtt_summary():
+async def get_gtt_current():
     try:
-        return service.get_gtt_summary()
+        return {"gtt": service.get_gtt_current()}
     except ValueError as e:
         raise HTTPException(status_code=500, detail=str(e))

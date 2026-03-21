@@ -53,7 +53,8 @@ class ECService:
         return {
             "region_id": self.region_id,
             "revocation_version": self.storage.get_revocation_version(),
-            "device_states": self.storage.get_device_states()
+            "device_states": self.storage.get_device_states(),
+            "device_secrets": self.storage.db.load("device_secrets") or {}
         }
 
     def get_state_delta(self, from_version: int):
@@ -64,14 +65,8 @@ class ECService:
             "changes": self.storage.get_revocation_events_from(from_version)
         }
 
-    def get_gtt_summary(self):
+    def get_gtt_current(self):
         gtt = self.storage.get_gtt()
         if not gtt:
             raise ValueError("GTT not available")
-
-        return {
-            "gtt_id": gtt["gtt_id"],
-            "root_pubkey": gtt["root_pubkey"],
-            "policy_version": gtt["policy_version"],
-            "revocation_version": gtt["revocation_version"]
-        }
+        return gtt
