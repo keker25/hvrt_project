@@ -90,6 +90,11 @@ async def measure_latency(mode: str = "default", iterations: int = 20, cta_url: 
             result = response.json()
             storage.save_device(device_id, result["device_secret"])
             print(f"Device registered with real secret: {device_id}")
+            
+            print(f"Syncing EC and AG states...")
+            await client.post("http://127.0.0.1:8050/ec/state/sync")
+            await client.post("http://127.0.0.1:8100/ag/state/sync")
+            print(f"Sync complete!")
 
     client = TDClient(device_id, storage)
     ag_url = "http://127.0.0.1:8100"
