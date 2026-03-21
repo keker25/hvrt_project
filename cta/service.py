@@ -123,6 +123,7 @@ from common import (
     create_revocation_event,
     sign_with_ed25519,
     get_logger,
+    generate_id,
 )
 from common.models import Device, DeltaEvent
 from .storage import CTAStorage
@@ -169,6 +170,7 @@ class CTAService:
         self.storage.set_revocation_version(new_version)
         
         registration_event = DeltaEvent(
+            event_id=generate_id("evt"),
             version=new_version,
             type="device_register",
             device_id=device_id,

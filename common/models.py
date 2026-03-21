@@ -55,6 +55,7 @@ class Device(BaseModel):
 
 
 class DeltaEvent(BaseModel):
+    event_id: str
     version: int
     type: str
     device_id: str

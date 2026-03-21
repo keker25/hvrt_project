@@ -78,12 +78,19 @@ class ECStorage:
     def get_device_states(self) -> Dict[str, str]:
         return self.db.load("device_states")
 
+    def _event_key(self, event: Dict) -> str:
+        if event.get("event_id"):
+            return event["event_id"]
+        return f"{event.get('type','unknown')}:{event.get('device_id','')}:{event.get('version','')}"
+
     def add_revocation_events(self, events: List[Dict]):
         current = self.db.load("revocation_events")
-        known = {e["event_id"] for e in current}
+        known = {self._event_key(e) for e in current}
         for event in events:
-            if event["event_id"] not in known:
+            key = self._event_key(event)
+            if key not in known:
                 current.append(event)
+                known.add(key)
         current.sort(key=lambda e: e["version"])
         self.db.save("revocation_events", current)
 

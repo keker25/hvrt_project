@@ -23,6 +23,7 @@ class AGService:
     def __init__(self):
         self.storage = AGStorage()
         self.region_id = "regionA"
+        self.ag_id = self.storage.get_gateway_id() or "ag_default"
         self._initialize_keys()
 
     def _initialize_keys(self):
@@ -171,7 +172,7 @@ class AGService:
         if not verify_sat(sat_obj, self.storage.get_ag_pubkey(), rrt_data["rrt_id"], device_id):
             return {"result": "deny", "reason": "SAT verification failed"}
         
-        if sat_data.get("gateway_scope") not in ["current", "any"]:
+        if sat_data.get("gateway_scope") not in ["current", "any", self.ag_id]:
             return {"result": "deny", "reason": "SAT gateway scope not allowed"}
 
         if mode == "terminal_online_status":

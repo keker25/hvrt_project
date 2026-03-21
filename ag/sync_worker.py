@@ -47,21 +47,28 @@ class AGSyncWorker:
                 events = delta_data["changes"]
                 
                 if events:
-                    current_states = self.storage.get_device_states()
-                    for event in events:
-                        if event.get("type") == "device_register":
-                            current_states[event["device_id"]] = event["status"]
-                            if event.get("device_secret"):
-                                self.storage.save_device_secret(
-                                    event["device_id"], 
-                                    event["device_secret"]
-                                )
+                    register_events = [e for e in events if e.get("type") == "device_register"]
+                    revoke_events = [e for e in events if e.get("type") != "device_register"]
                     
-                    new_states, _ = apply_delta(
-                        current_states,
-                        current_version,
-                        [type("RevocationEvent", (object,), e) for e in events]
-                    )
+                    current_states = self.storage.get_device_states()
+                    
+                    for event in register_events:
+                        current_states[event["device_id"]] = event["status"]
+                        if event.get("device_secret"):
+                            self.storage.save_device_secret(
+                                event["device_id"], 
+                                event["device_secret"]
+                            )
+                    
+                    if revoke_events:
+                        new_states, _ = apply_delta(
+                            current_states,
+                            current_version,
+                            [type("RevocationEvent", (object,), e) for e in revoke_events]
+                        )
+                    else:
+                        new_states = current_states
+                    
                     self.storage.save_device_states(new_states)
                 
                 self.storage.set_revocation_version(delta_data["to_version"])

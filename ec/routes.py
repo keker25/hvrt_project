@@ -40,3 +40,11 @@ async def issue_rrt(request: IssueRRTRequest):
         return service.issue_rrt(request.device_id, request.region_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/state/sync")
+async def sync_state():
+    from .sync_worker import ECSyncWorker
+    worker = ECSyncWorker(service.storage)
+    await worker.sync_with_cta()
+    return {"status": "synced"}
