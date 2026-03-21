@@ -83,7 +83,7 @@ async def measure_latency(mode: str = "default", iterations: int = 20, cta_url: 
         print(f"Registering device {device_id} with CTA...")
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.post(
-                f"{cta_url}/cta/devices/register",
+                f"{cta_url}/cta/register_device",
                 json={"device_id": device_id, "region_id": "regionA"}
             )
             response.raise_for_status()

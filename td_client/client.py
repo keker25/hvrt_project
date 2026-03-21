@@ -147,11 +147,11 @@ class TDClient:
             logger.info(f"Enrolled successfully with AG {ag_url}")
             return {"rrt": rrt, "sat": sat}
 
-    async def _fetch_status_receipt(self, cta_url: str):
+    async def _fetch_status_receipt(self, cta_url: str, request_id: str = None):
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 f"{cta_url}/cta/device/status_receipt",
-                json={"device_id": self.device_id}
+                json={"device_id": self.device_id, "request_id": request_id}
             )
             response.raise_for_status()
             return response.json()["receipt"]
@@ -163,7 +163,7 @@ class TDClient:
         request_id = generate_id("req")
         status_receipt = None
         if mode == "terminal_online_status":
-            status_receipt = await self._fetch_status_receipt(cta_url)
+            status_receipt = await self._fetch_status_receipt(cta_url, request_id)
 
         async with httpx.AsyncClient() as client:
             request_response = await client.post(

@@ -1,7 +1,7 @@
 from pathlib import Path
 from common import SimpleDB
-from common.models import Device, GTT, RevocationEvent
-from typing import List, Dict
+from common.models import Device, GTT, RevocationEvent, DeltaEvent
+from typing import List, Dict, Union
 
 
 class CTAStorage:
@@ -56,7 +56,7 @@ class CTAStorage:
     def set_revocation_version(self, version: int):
         self.db.set("meta", "revocation_version", version)
     
-    def add_revocation_event(self, event: RevocationEvent):
+    def add_revocation_event(self, event: Union[RevocationEvent, DeltaEvent]):
         events = self.db.load("revocation_events")
         events.append(event.dict())
         self.db.save("revocation_events", events)

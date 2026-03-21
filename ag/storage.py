@@ -11,6 +11,8 @@ class AGStorage:
     def _initialize(self):
         if not self.db.get("meta", "revocation_version"):
             self.db.set("meta", "revocation_version", 0)
+        if not self.db.get("meta", "gateway_id"):
+            self.db.set("meta", "gateway_id", "ag_001")
         if not self.db.load("device_states"):
             self.db.save("device_states", {})
         if not self.db.load("device_secrets"):
@@ -23,6 +25,9 @@ class AGStorage:
             self.db.save("challenges", {})
         if not self.db.load("sessions"):
             self.db.save("sessions", {})
+    
+    def get_gateway_id(self) -> str:
+        return self.db.get("meta", "gateway_id")
     
     def save_gtt(self, gtt_data: Dict):
         self.db.set("meta", "current_gtt", gtt_data)

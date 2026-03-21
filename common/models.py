@@ -52,3 +52,13 @@ class Device(BaseModel):
     status: str = "active"
     region_id: str
     created_at: str
+
+
+class DeltaEvent(BaseModel):
+    version: int
+    type: str
+    device_id: str
+    status: Optional[str] = None
+    region_id: Optional[str] = None
+    device_secret: Optional[str] = None
+    timestamp: str

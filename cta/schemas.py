@@ -98,6 +98,7 @@ class OnlineVerifyResponse(BaseModel):
 
 class StatusReceiptRequest(BaseModel):
     device_id: str
+    request_id: str = None
 
 
 class StatusReceiptResponse(BaseModel):

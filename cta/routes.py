@@ -117,6 +117,6 @@ async def online_verify(request: OnlineVerifyRequest):
 @router.post("/device/status_receipt", response_model=StatusReceiptResponse)
 async def issue_status_receipt(request: StatusReceiptRequest):
     try:
-        return {"receipt": service.issue_status_receipt(request.device_id)}
+        return {"receipt": service.issue_status_receipt(request.device_id, request.request_id)}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

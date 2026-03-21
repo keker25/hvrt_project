@@ -124,7 +124,7 @@ from common import (
     sign_with_ed25519,
     get_logger,
 )
-from common.models import Device
+from common.models import Device, DeltaEvent
 from .storage import CTAStorage
 
 logger = get_logger("cta_service")
@@ -168,18 +168,16 @@ class CTAService:
         new_version = self.storage.get_revocation_version() + 1
         self.storage.set_revocation_version(new_version)
         
-        registration_event = {
-            "version": new_version,
-            "type": "device_register",
-            "device_id": device_id,
-            "status": "active",
-            "region_id": region_id,
-            "device_secret": device_secret,
-            "timestamp": datetime.utcnow().isoformat() + "Z"
-        }
-        self.storage.add_revocation_event(
-            type("RevocationEvent", (object,), registration_event)
+        registration_event = DeltaEvent(
+            version=new_version,
+            type="device_register",
+            device_id=device_id,
+            status="active",
+            region_id=region_id,
+            device_secret=device_secret,
+            timestamp=datetime.utcnow().isoformat() + "Z"
         )
+        self.storage.add_revocation_event(registration_event)
         
         logger.info(f"Registered device: {device_id} in region {region_id}, version: {new_version}")
         return device
@@ -260,7 +258,7 @@ class CTAService:
             "revocation_version": self.storage.get_revocation_version()
         }
 
-    def issue_status_receipt(self, device_id: str):
+    def issue_status_receipt(self, device_id: str, request_id: str = None):
         device = self.storage.get_device(device_id)
         if not device:
             raise ValueError(f"Device {device_id} not found")
@@ -275,5 +273,7 @@ class CTAService:
             "issued_at": now.isoformat().replace("+00:00", "Z"),
             "expire_at": expire_at.isoformat().replace("+00:00", "Z")
         }
+        if request_id:
+            receipt_data["request_id"] = request_id
         signature = sign_with_ed25519(self.storage.get_root_privkey(), receipt_data)
         return {**receipt_data, "signature": signature}
