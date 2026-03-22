@@ -16,63 +16,75 @@ class AGSyncWorker:
         logger.debug("Syncing with EC")
         current_version = self.storage.get_revocation_version()
         
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            gtt_response = await client.get(f"{self.ec_url}/ec/gtt/current")
-            gtt_response.raise_for_status()
-            gtt_data = gtt_response.json()["gtt"]
-            self.storage.save_gtt(gtt_data)
-            logger.debug(f"Updated GTT from EC: {gtt_data['gtt_id']}")
-            
-            state_response = await client.get(f"{self.ec_url}/ec/state/current")
-            state_response.raise_for_status()
-            state_data = state_response.json()
-            
-            self.storage.save_device_states(state_data["device_states"])
-            for device_id, secret in state_data.get("device_secrets", {}).items():
-                self.storage.save_device_secret(device_id, secret)
-            
-            if state_data.get("ec_pubkey"):
-                self.storage.set_ec_pubkey(state_data["ec_pubkey"])
-                logger.debug("Updated EC public key")
-            
-            delta_response = await client.get(
-                f"{self.ec_url}/ec/state/delta",
-                params={"from_version": current_version}
-            )
-            delta_response.raise_for_status()
-            delta_data = delta_response.json()
-            
-            if delta_data["to_version"] > current_version:
-                logger.info(f"Applying delta from {current_version} to {delta_data['to_version']}")
-                events = delta_data["changes"]
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                # 获取 GTT
+                try:
+                    gtt_response = await client.get(f"{self.ec_url}/ec/gtt/current")
+                    gtt_response.raise_for_status()
+                    gtt_data = gtt_response.json().get("gtt")
+                    if gtt_data:
+                        self.storage.save_gtt(gtt_data)
+                        logger.debug(f"Updated GTT from EC: {gtt_data.get('gtt_id')}")
+                except Exception as e:
+                    logger.error(f"Failed to get GTT: {e}")
                 
-                if events:
-                    register_events = [e for e in events if e.get("type") == "device_register"]
-                    revoke_events = [e for e in events if e.get("type") != "device_register"]
+                # 获取当前状态
+                try:
+                    state_response = await client.get(f"{self.ec_url}/ec/state/current")
+                    state_response.raise_for_status()
+                    state_data = state_response.json()
                     
-                    current_states = self.storage.get_device_states()
+                    self.storage.save_device_states(state_data.get("device_states", {}))
+                    for device_id, secret in state_data.get("device_secrets", {}).items():
+                        self.storage.save_device_secret(device_id, secret)
                     
-                    for event in register_events:
-                        current_states[event["device_id"]] = event["status"]
-                        if event.get("device_secret"):
-                            self.storage.save_device_secret(
-                                event["device_id"], 
-                                event["device_secret"]
-                            )
-                    
-                    if revoke_events:
-                        new_states, _ = apply_delta(
-                            current_states,
-                            current_version,
-                            [type("RevocationEvent", (object,), e) for e in revoke_events]
-                        )
-                    else:
-                        new_states = current_states
-                    
-                    self.storage.save_device_states(new_states)
+                    if state_data.get("ec_pubkey"):
+                        self.storage.set_ec_pubkey(state_data["ec_pubkey"])
+                        logger.debug("Updated EC public key")
+                except Exception as e:
+                    logger.error(f"Failed to get current state: {e}")
                 
-                self.storage.set_revocation_version(delta_data["to_version"])
-                logger.info(f"Synced to version {delta_data['to_version']}")
+                # 获取状态增量
+                try:
+                    delta_response = await client.get(
+                        f"{self.ec_url}/ec/state/delta",
+                        params={"from_version": current_version}
+                    )
+                    delta_response.raise_for_status()
+                    delta_data = delta_response.json()
+                    
+                    if delta_data.get("to_version") > current_version:
+                        logger.info(f"Applying delta from {current_version} to {delta_data['to_version']}")
+                        events = delta_data.get("changes", [])
+                        
+                        if events:
+                            # 按版本顺序处理事件
+                            events_sorted = sorted(events, key=lambda e: e.get("version", 0))
+                            
+                            current_states = self.storage.get_device_states()
+                            
+                            for event in events_sorted:
+                                if event.get("type") == "device_register":
+                                    # 处理注册事件
+                                    current_states[event["device_id"]] = event["status"]
+                                    if event.get("device_secret"):
+                                        self.storage.save_device_secret(
+                                            event["device_id"], 
+                                            event["device_secret"]
+                                        )
+                                else:
+                                    # 处理撤销事件
+                                    current_states[event["device_id"]] = event["status"]
+                            
+                            self.storage.save_device_states(current_states)
+                        
+                        self.storage.set_revocation_version(delta_data["to_version"])
+                        logger.info(f"Synced to version {delta_data['to_version']}")
+                except Exception as e:
+                    logger.error(f"Failed to get state delta: {e}")
+        except Exception as e:
+            logger.error(f"Sync with EC failed: {e}")
     
     async def _run_loop(self):
         while self.running:

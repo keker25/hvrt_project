@@ -31,13 +31,15 @@ AG2_URL = "http://127.0.0.1:8200"
 
 async def reset_env():
     print("\n=== 清理环境 ===")
-    # 清空数据目录
-    for dir_name in ["cta/data", "ec/data", "ag/data", "td_client/data"]:
-        dir_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), dir_name)
-        if os.path.exists(dir_path):
-            import shutil
-            shutil.rmtree(dir_path)
-            os.makedirs(dir_path, exist_ok=True)
+    # 清理设备数据
+    devices_to_clean = ["td_e2e_001"]
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        for device_id in devices_to_clean:
+            try:
+                # 尝试撤销设备（如果存在）
+                await client.post(f"{CTA_URL}/cta/revoke_device", json={"device_id": device_id})
+            except Exception:
+                pass
     print("✅ 环境清理完成")
 
 

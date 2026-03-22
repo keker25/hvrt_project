@@ -35,7 +35,7 @@
 #         return self.db.load("device_states")
 
 
-from common import SimpleDB, generate_ed25519_keypair
+from common import SimpleDB, generate_ed25519_keypair, get_logger
 from typing import Dict, List
 
 
@@ -84,19 +84,32 @@ class ECStorage:
         return f"{event.get('type','unknown')}:{event.get('device_id','')}:{event.get('version','')}"
 
     def add_revocation_events(self, events: List[Dict]):
-        current = self.db.load("revocation_events")
-        known = {self._event_key(e) for e in current}
-        for event in events:
-            key = self._event_key(event)
-            if key not in known:
-                current.append(event)
-                known.add(key)
-        current.sort(key=lambda e: e["version"])
-        self.db.save("revocation_events", current)
+        try:
+            current = self.db.load("revocation_events")
+            # 确保 current 是列表
+            if not isinstance(current, list):
+                current = []
+            known = {self._event_key(e) for e in current}
+            for event in events:
+                key = self._event_key(event)
+                if key not in known:
+                    current.append(event)
+                    known.add(key)
+            # 过滤掉没有 version 字段的事件
+            current = [e for e in current if "version" in e]
+            if current:
+                current.sort(key=lambda e: e["version"])
+            self.db.save("revocation_events", current)
+        except Exception as e:
+            logger = get_logger("ec_storage")
+            logger.error(f"Failed to add revocation events: {e}")
 
     def get_revocation_events_from(self, from_version: int) -> List[Dict]:
         events = self.db.load("revocation_events")
-        return [e for e in events if e["version"] > from_version]
+        # 确保 events 是列表
+        if not isinstance(events, list):
+            return []
+        return [e for e in events if e.get("version", 0) > from_version]
     
     def save_device_secret(self, device_id: str, device_secret: str):
         device_secrets = self.db.load("device_secrets")

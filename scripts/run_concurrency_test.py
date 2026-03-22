@@ -31,6 +31,7 @@ async def run_concurrency_test(num_devices: int = 5):
     print(f"=== Running Concurrency Test with {num_devices} devices ===")
     
     CTA_URL = "http://127.0.0.1:8000"
+    EC_URL = "http://127.0.0.1:8050"
     ag_url = "http://127.0.0.1:8100"
     
     print(f"\nStep 1: Registering all {num_devices} devices with CTA...")
@@ -43,9 +44,21 @@ async def run_concurrency_test(num_devices: int = 5):
     register_results = await asyncio.gather(*register_tasks, return_exceptions=True)
     print("Registration complete!")
     
+    print("\nStep 2: Syncing EC from CTA...")
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        response = await client.post(f"{EC_URL}/ec/state/sync")
+        response.raise_for_status()
+    print("   ✓ EC sync complete")
+    
+    print("\nStep 3: Syncing AG from EC...")
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        response = await client.post(f"{ag_url}/ag/state/sync")
+        response.raise_for_status()
+    print("   ✓ AG sync complete")
+    
     start_time = datetime.now()
     
-    print(f"\nStep 2: Running {num_devices} concurrent authentication tests...")
+    print(f"\nStep 4: Running {num_devices} concurrent authentication tests...")
     auth_tasks = []
     for i in range(num_devices):
         device_id = f"td_conc_{i:03d}"

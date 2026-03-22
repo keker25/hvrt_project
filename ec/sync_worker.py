@@ -92,48 +92,62 @@ class ECSyncWorker:
         logger.debug("Syncing with CTA")
         current_version = self.storage.get_revocation_version()
 
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            gtt_response = await client.get(f"{self.cta_url}/cta/gtt/current")
-            gtt_response.raise_for_status()
-            gtt_data = gtt_response.json()["gtt"]
-            self.storage.save_gtt(gtt_data)
-
-            delta_response = await client.get(
-                f"{self.cta_url}/cta/revocation/delta",
-                params={"from_version": current_version}
-            )
-            delta_response.raise_for_status()
-            delta_data = delta_response.json()
-
-            if delta_data["to_version"] > current_version:
-                events = delta_data["changes"]
-                self.storage.add_revocation_events(events)
+        try:
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                # 获取 GTT
+                try:
+                    gtt_response = await client.get(f"{self.cta_url}/cta/gtt/current")
+                    gtt_response.raise_for_status()
+                    gtt_data = gtt_response.json().get("gtt")
+                    if gtt_data:
+                        self.storage.save_gtt(gtt_data)
+                        logger.debug(f"Updated GTT: {gtt_data.get('gtt_id')}")
+                except Exception as e:
+                    logger.error(f"Failed to get GTT: {e}")
                 
-                register_events = [e for e in events if e.get("type") == "device_register"]
-                revoke_events = [e for e in events if e.get("type") != "device_register"]
-                
-                current_states = self.storage.get_device_states()
-                
-                for event in register_events:
-                    current_states[event["device_id"]] = event["status"]
-                    if event.get("device_secret"):
-                        self.storage.save_device_secret(
-                            event["device_id"], 
-                            event["device_secret"]
-                        )
-                
-                if revoke_events:
-                    new_states, _ = apply_delta(
-                        current_states,
-                        current_version,
-                        [type("RevocationEvent", (object,), e) for e in revoke_events]
+                # 获取 revocation delta
+                try:
+                    delta_response = await client.get(
+                        f"{self.cta_url}/cta/revocation/delta",
+                        params={"from_version": current_version}
                     )
-                else:
-                    new_states = current_states
-                
-                self.storage.save_device_states(new_states)
-                self.storage.set_revocation_version(delta_data["to_version"])
-                logger.info(f"Synced to version {delta_data['to_version']}")
+                    delta_response.raise_for_status()
+                    delta_data = delta_response.json()
+
+                    if delta_data.get("to_version") > current_version:
+                        events = delta_data.get("changes", [])
+                        self.storage.add_revocation_events(events)
+                        
+                        current_states = self.storage.get_device_states()
+                        
+                        # 按版本顺序处理事件
+                        events_sorted = sorted(events, key=lambda e: e.get("version", 0))
+                        
+                        for event in events_sorted:
+                            if event.get("type") == "device_register":
+                                # 处理注册事件
+                                current_states[event["device_id"]] = event["status"]
+                                if event.get("device_secret"):
+                                    self.storage.save_device_secret(
+                                        event["device_id"], 
+                                        event["device_secret"]
+                                    )
+                            else:
+                                # 处理撤销事件
+                                event_dict = event.copy()
+                                event_dict["new_status"] = event_dict.pop("status")
+                                revocation_event = type("RevocationEvent", (object,), event_dict)
+                                current_states[event["device_id"]] = event["status"]
+                        
+                        new_states = current_states
+                        
+                        self.storage.save_device_states(new_states)
+                        self.storage.set_revocation_version(delta_data["to_version"])
+                        logger.info(f"Synced to version {delta_data['to_version']}")
+                except Exception as e:
+                    logger.error(f"Failed to get revocation delta: {e}")
+        except Exception as e:
+            logger.error(f"Sync with CTA failed: {e}")
 
     def stop(self):
         self.running = False

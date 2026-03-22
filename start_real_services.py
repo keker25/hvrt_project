@@ -54,12 +54,20 @@ def main():
         )
         processes.append(ag1_proc)
         
+        print("正在启动 AG2 (端口 8200)...")
+        ag2_proc = subprocess.Popen(
+            [venv_python, "-m", "ag.main", "--port", "8200"],
+            cwd=base_path
+        )
+        processes.append(ag2_proc)
+        
         print("\n服务已启动！")
         print("=" * 80)
         print("  服务地址：")
         print("  - CTA: http://127.0.0.1:8000")
         print("  - EC:  http://127.0.0.1:8050")
         print("  - AG1: http://127.0.0.1:8100")
+        print("  - AG2: http://127.0.0.1:8200")
         print("=" * 80)
         print("按 Ctrl+C 停止所有服务\n")
         

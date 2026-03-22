@@ -1,12 +1,14 @@
 {
-  "revocation_version": 2,
+  "revocation_version": 4,
+  "ec_privkey": "q7t0YdnvFZVPOA625g/qMO6yiTXBKBH3qp5MP6iIfrA=",
+  "ec_pubkey": "f0fIPLY7QR9PGC+/ud/UNvIayaTEL49cZ2VVJNMfBuw=",
   "current_gtt": {
-    "gtt_id": "gtt_a34bb77629387045",
-    "root_pubkey": "hrsxlEOga0g5i16x3wQItUowLwpTZwDjbvTn8Q9zQXM=",
+    "gtt_id": "gtt_c59815d13ab72def",
+    "root_pubkey": "NiHmcX8hSOJC7b1/ixWsGxSoXyR5ukjr0bGBYAYjtZc=",
     "policy_version": 1,
     "revocation_version": 1,
-    "valid_from": "2026-03-15T13:18:39.293874Z",
-    "valid_to": "2026-04-14T13:18:39.293874Z",
-    "signature": "JBBJgA2CiUoOmrR+MsvJCgpbrWn7mJqH/9EP2c6hLiy0/YgY7RW8JAYA6R1RB7f9si/Veg1uf6GV0LKxq2SJAg=="
+    "valid_from": "2026-03-22T05:27:59.683088Z",
+    "valid_to": "2026-04-21T05:27:59.683088Z",
+    "signature": "q4tKv4Y9HJRGLoqKvOvMtXjImI/laT+tz547SvsHtW7XTysc/aFF/wzu2AtRpN6do6DYlgLbWwdIJaiLMBR6Cw=="
   }
 }

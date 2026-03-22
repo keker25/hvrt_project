@@ -6,6 +6,7 @@ from .schemas import (
     GTTSummaryResponse,
 )
 from .service import ECService
+from common import get_logger
 
 router = APIRouter(prefix="/ec", tags=["ec"])
 service = ECService()
@@ -44,7 +45,12 @@ async def issue_rrt(request: IssueRRTRequest):
 
 @router.post("/state/sync")
 async def sync_state():
-    from .sync_worker import ECSyncWorker
-    worker = ECSyncWorker(service.storage)
-    await worker.sync_with_cta()
-    return {"status": "synced"}
+    try:
+        from .sync_worker import ECSyncWorker
+        worker = ECSyncWorker(service.storage)
+        await worker.sync_with_cta()
+        return {"status": "synced"}
+    except Exception as e:
+        logger = get_logger("ec_routes")
+        logger.error(f"Sync state failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
