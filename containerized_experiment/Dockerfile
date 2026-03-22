@@ -15,8 +15,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY common/ /app/common/
 COPY containerized_experiment/ /app/
 
-# 创建日志目录
-RUN mkdir -p /app/logs
+# 创建日志和数据目录
+RUN mkdir -p /app/logs /app/data
 
 # 默认命令
 CMD ["python", "-c", "print('HVRT container ready')"]

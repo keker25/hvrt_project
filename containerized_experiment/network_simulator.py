@@ -6,11 +6,27 @@ import time
 import random
 from typing import Tuple
 
+import os
+
+
 class NetworkSimulator:
     def __init__(self, delay_min_ms: float = 10, delay_max_ms: float = 100, loss_rate: float = 0.05):
-        self.delay_min_ms = delay_min_ms
-        self.delay_max_ms = delay_max_ms
-        self.loss_rate = loss_rate
+        # allow override from environment variables for experiments
+        try:
+            env_min = float(os.getenv("NET_DELAY_MIN_MS", ""))
+            env_max = float(os.getenv("NET_DELAY_MAX_MS", ""))
+        except Exception:
+            env_min = None
+            env_max = None
+
+        try:
+            env_loss = float(os.getenv("NET_LOSS_RATE", ""))
+        except Exception:
+            env_loss = None
+
+        self.delay_min_ms = env_min if env_min is not None else delay_min_ms
+        self.delay_max_ms = env_max if env_max is not None else delay_max_ms
+        self.loss_rate = env_loss if env_loss is not None else loss_rate
     
     def simulate_network(self) -> Tuple[float, bool]:
         """

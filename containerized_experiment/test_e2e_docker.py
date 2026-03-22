@@ -44,7 +44,7 @@ async def test_case_1_register_enroll_access():
     print("用例 1：注册—同步—发票据—访问成功")
     print("="*60)
     
-    device_id = "td_docker_001"
+    device_id = "td_docker_002"
     device_secret = None
     gtt = None
     

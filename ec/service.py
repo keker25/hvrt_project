@@ -54,7 +54,7 @@ class ECService:
             "region_id": self.region_id,
             "revocation_version": self.storage.get_revocation_version(),
             "device_states": self.storage.get_device_states(),
-            "device_secrets": self.storage.db.load("device_secrets") or {},
+            "device_secrets": self.storage.db.ec_get_device_secrets() or {},
             "ec_pubkey": self.storage.get_ec_pubkey()
         }
 

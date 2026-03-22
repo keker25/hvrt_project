@@ -94,16 +94,32 @@ class ECSyncWorker:
 
         try:
             async with httpx.AsyncClient(timeout=15.0) as client:
-                # 获取 GTT
-                try:
-                    gtt_response = await client.get(f"{self.cta_url}/cta/gtt/current")
-                    gtt_response.raise_for_status()
-                    gtt_data = gtt_response.json().get("gtt")
-                    if gtt_data:
-                        self.storage.save_gtt(gtt_data)
-                        logger.debug(f"Updated GTT: {gtt_data.get('gtt_id')}")
-                except Exception as e:
-                    logger.error(f"Failed to get GTT: {e}")
+                # 获取 GTT - 支持多个可能的 CTA 路径以兼容容器化和非容器化版本
+                gtt_data = None
+                gtt_endpoints = [
+                    f"{self.cta_url}/cta/gtt/current",
+                    f"{self.cta_url}/gtt",
+                    f"{self.cta_url}/sync",
+                ]
+                for ep in gtt_endpoints:
+                    try:
+                        resp = await client.get(ep)
+                        resp.raise_for_status()
+                        j = resp.json()
+                        # 支持不同返回格式
+                        if isinstance(j, dict) and j.get("gtt"):
+                            gtt_data = j.get("gtt")
+                        elif isinstance(j, dict) and j.get("gtt_id"):
+                            gtt_data = j
+                        elif isinstance(j, dict) and j.get("revocation_version") and j.get("gtt") is None:
+                            # /sync 返回的结构里可能直接包含 gtt under 'gtt'
+                            gtt_data = j.get("gtt") or j
+                        if gtt_data:
+                            self.storage.save_gtt(gtt_data)
+                            logger.debug(f"Updated GTT from {ep}: {gtt_data.get('gtt_id')}")
+                            break
+                    except Exception:
+                        logger.debug(f"CTA GTT endpoint not available: {ep}")
                 
                 # 获取 revocation delta
                 try:

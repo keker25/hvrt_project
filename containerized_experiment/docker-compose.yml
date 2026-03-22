@@ -14,6 +14,7 @@ services:
       - hvrt-network
     volumes:
       - ./logs:/app/logs
+      - ./data/cta:/app/data
     command: python cta_server.py
     healthcheck:
       test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/health')"]
@@ -35,6 +36,7 @@ services:
       - hvrt-network
     volumes:
       - ./logs:/app/logs
+      - ./data/ec:/app/data
     command: python ec_server.py
     depends_on:
       cta:
@@ -60,6 +62,7 @@ services:
       - hvrt-network
     volumes:
       - ./logs:/app/logs
+      - ./data/ag1:/app/data
     command: python ag_server.py
     depends_on:
       ec:
@@ -85,6 +88,7 @@ services:
       - hvrt-network
     volumes:
       - ./logs:/app/logs
+      - ./data/ag2:/app/data
     command: python ag_server.py
     depends_on:
       ec:

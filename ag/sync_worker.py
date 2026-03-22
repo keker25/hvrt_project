@@ -18,32 +18,51 @@ class AGSyncWorker:
         
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
-                # 获取 GTT
-                try:
-                    gtt_response = await client.get(f"{self.ec_url}/ec/gtt/current")
-                    gtt_response.raise_for_status()
-                    gtt_data = gtt_response.json().get("gtt")
-                    if gtt_data:
-                        self.storage.save_gtt(gtt_data)
-                        logger.debug(f"Updated GTT from EC: {gtt_data.get('gtt_id')}")
-                except Exception as e:
-                    logger.error(f"Failed to get GTT: {e}")
+                # 获取 GTT - 兼容 EC 的不同端点
+                gtt_data = None
+                gtt_endpoints = [
+                    f"{self.ec_url}/ec/gtt/current",
+                    f"{self.ec_url}/gtt",
+                    f"{self.ec_url}/ec/gtt",
+                ]
+                for ep in gtt_endpoints:
+                    try:
+                        resp = await client.get(ep)
+                        resp.raise_for_status()
+                        j = resp.json()
+                        if isinstance(j, dict) and j.get("gtt"):
+                            gtt_data = j.get("gtt")
+                        elif isinstance(j, dict) and j.get("gtt_id"):
+                            gtt_data = j
+                        if gtt_data:
+                            self.storage.save_gtt(gtt_data)
+                            logger.debug(f"Updated GTT from EC endpoint {ep}: {gtt_data.get('gtt_id')}")
+                            break
+                    except Exception:
+                        logger.debug(f"EC GTT endpoint not available: {ep}")
                 
-                # 获取当前状态
-                try:
-                    state_response = await client.get(f"{self.ec_url}/ec/state/current")
-                    state_response.raise_for_status()
-                    state_data = state_response.json()
-                    
-                    self.storage.save_device_states(state_data.get("device_states", {}))
-                    for device_id, secret in state_data.get("device_secrets", {}).items():
-                        self.storage.save_device_secret(device_id, secret)
-                    
-                    if state_data.get("ec_pubkey"):
-                        self.storage.set_ec_pubkey(state_data["ec_pubkey"])
-                        logger.debug("Updated EC public key")
-                except Exception as e:
-                    logger.error(f"Failed to get current state: {e}")
+                # 获取当前状态 - 支持不同返回路径
+                state_data = None
+                state_endpoints = [
+                    f"{self.ec_url}/ec/state/current",
+                    f"{self.ec_url}/state/current",
+                    f"{self.ec_url}/ec/state",
+                ]
+                for ep in state_endpoints:
+                    try:
+                        resp = await client.get(ep)
+                        resp.raise_for_status()
+                        state_data = resp.json()
+                        if state_data:
+                            self.storage.save_device_states(state_data.get("device_states", {}))
+                            for device_id, secret in state_data.get("device_secrets", {}).items():
+                                self.storage.save_device_secret(device_id, secret)
+                            if state_data.get("ec_pubkey"):
+                                self.storage.set_ec_pubkey(state_data["ec_pubkey"])
+                                logger.debug("Updated EC public key from %s" % ep)
+                            break
+                    except Exception:
+                        logger.debug(f"EC state endpoint not available: {ep}")
                 
                 # 获取状态增量
                 try:

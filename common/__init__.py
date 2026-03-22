@@ -23,7 +23,7 @@ from .ticket_utils import (
 )
 from .state_utils import apply_delta, create_revocation_event
 from .logger import get_logger
-from .db import SimpleDB
+from .db import SimpleDB, SQLiteDB
 
 __all__ = [
     "GTT",
@@ -48,4 +48,5 @@ __all__ = [
     "create_revocation_event",
     "get_logger",
     "SimpleDB",
+    "SQLiteDB",
 ]

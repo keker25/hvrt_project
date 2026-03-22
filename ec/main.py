@@ -12,6 +12,13 @@ worker = None
 async def lifespan(app: FastAPI):
     global worker
     worker = ECSyncWorker(ec_service.storage)
+    # perform an initial sync with CTA to fetch GTT/pubkey before serving
+    try:
+        await worker.sync_with_cta()
+    except Exception as e:
+        import sys
+        print(f"Warning: initial EC sync failed: {e}", file=sys.stderr)
+
     task = asyncio.create_task(worker.start())
     yield
     worker.stop()

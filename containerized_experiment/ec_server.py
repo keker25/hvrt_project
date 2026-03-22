@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-EC (Edge Coordinator) Server - FastAPI 容器化版本 (增强版)
+EC (Edge Coordinator) Server - FastAPI 容器化版本 (数据库版)
+- 使用 SQLite 数据库存储
 - 添加调试接口
 - 完善撤销同步
 """
@@ -23,8 +24,13 @@ from cryptography.hazmat.primitives import serialization
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from network_simulator import default_network
+from database import Database
 
 app = FastAPI(title="HVRT EC Server")
+
+# 初始化数据库
+db = Database("/app/data/ec.db")
+
 
 class CryptoUtils:
     @staticmethod
@@ -85,13 +91,12 @@ class CryptoUtils:
     def generate_secret() -> str:
         return base64.b64encode(os.urandom(32)).decode()
 
+
 class EC:
     def __init__(self, cta_url: str):
         self.cta_url = cta_url
-        self.gtt = None
-        self.revocation_version = 1
-        self.revoked_devices = set()
-        self.device_states = {}  # 存储完整的设备状态
+        self.gtt = db.ec_get_metadata("current_gtt")
+        self.revocation_version = db.ec_get_metadata("revocation_version") or 1
         self._sync_with_cta()
     
     def _sync_with_cta(self):
@@ -101,10 +106,20 @@ class EC:
                 data = response.json()
                 self.gtt = data["gtt"]
                 self.revocation_version = data["revocation_version"]
-                self.revoked_devices = set(data["revoked_devices"])
-                self.device_states = data.get("device_states", {})
-                print(f"[EC] Synced with CTA: version={self.revocation_version}, devices={len(self.device_states)}, revoked={len(self.revoked_devices)}")
-                print(f"[EC] device_states: {self.device_states}")
+                db.ec_set_metadata("current_gtt", self.gtt)
+                db.ec_set_metadata("revocation_version", self.revocation_version)
+                
+                # 保存设备状态
+                device_states = data.get("device_states", {})
+                db.ec_save_device_states(device_states)
+
+                # 保存设备 secret（如果 CTA 提供）
+                device_secrets = data.get("device_secrets", {})
+                for did, secret in device_secrets.items():
+                    db.ec_save_device_secret(did, secret)
+                
+                print(f"[EC] Synced with CTA: version={self.revocation_version}, devices={len(device_states)}")
+                print(f"[EC] device_states: {device_states}")
         except Exception as e:
             print(f"EC sync error: {e}")
     
@@ -118,17 +133,28 @@ class EC:
         }
     
     def get_sync_data(self):
+        device_states = db.ec_get_device_states()
+        revoked_devices = [did for did, status in device_states.items() if status == "revoked"]
+        # 包含设备 secrets（如果存在）以便下游 AG 获取
+        device_secrets = {}
+        for did in device_states.keys():
+            sec = db.ec_get_device_secret(did)
+            if sec:
+                device_secrets[did] = sec
+
         return {
             "gtt": self.gtt,
             "revocation_version": self.revocation_version,
-            "revoked_devices": list(self.revoked_devices),
-            "device_states": self.device_states
+            "revoked_devices": revoked_devices,
+            "device_states": device_states,
+            "device_secrets": device_secrets
         }
     
     def get_device_status(self, device_id: str):
         """调试接口：获取设备状态"""
-        revoked = device_id in self.revoked_devices
-        status = self.device_states.get(device_id, "unknown")
+        device_states = db.ec_get_device_states()
+        status = device_states.get(device_id, "unknown")
+        revoked = status == "revoked"
         return {
             "device_id": device_id,
             "revoked": revoked,
@@ -136,29 +162,41 @@ class EC:
             "ec_revocation_version": self.revocation_version
         }
 
+
 cta_url = os.getenv("CTA_URL", "http://cta:8000")
 ec = EC(cta_url)
+
+
+@app.get("/")
+async def root():
+    return {"service": "ec", "status": "running"}
+
 
 @app.get("/health")
 async def health_check():
     return {"status": "ok", "service": "ec"}
 
+
 @app.post("/sync")
 async def sync():
     return ec.sync_with_cta()
+
 
 @app.get("/sync_data")
 async def get_sync_data():
     return ec.get_sync_data()
 
+
 @app.get("/version")
 async def get_version():
     return {"revocation_version": ec.revocation_version}
+
 
 @app.get("/debug/device_status/{device_id}")
 async def debug_device_status(device_id: str):
     """调试接口：检查设备在 EC 的状态"""
     return ec.get_device_status(device_id)
+
 
 if __name__ == "__main__":
     import uvicorn
